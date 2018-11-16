@@ -1,0 +1,22 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 7,
+    "sourceType": "module"
+  },
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "plugins": ["prettier"],
+  "rules": {
+    "space-before-function-paren": [0],
+    "prettier/prettier": "error",
+    "indent": [0],
+    "no-shadow": 2,
+    "no-undef": 2,
+    "no-undefined": 2,
+    "no-unused-vars": 2,
+    "no-unreachable": 2,
+    "no-mixed-spaces-and-tabs": 2
+  }
+}
