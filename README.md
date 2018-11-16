@@ -7,7 +7,7 @@
 
 示例代码
 
-- [普通的Token](/blob/master/sample/plain.js)
-- [优先级信息](/blob/master/sample/group.js)
-- [普通的计算](/blob/master/sample/calculator.js)
+- [普通的Token](/sample/plain.js)
+- [优先级信息](/sample/group.js)
+- [普通的计算](/sample/calculator.js)
 
