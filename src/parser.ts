@@ -1,8 +1,18 @@
-const last = arr => arr[arr.length - 1];
+type IResult = Array<Array<string>>;
+type IParserFunc = () => IResult;
 
-const fail = [() => []];
+type IParser = ICh | IEnd | IRegex | ISeq | IAlt | IAny | IOptOrRep
 
-const ch = c => [
+type ILast = (array: Array<string>) => string
+
+const last: ILast = arr => arr[arr.length - 1];
+
+const fail: [IParserFunc] = [() => []];
+
+type IChFunc = (input: string) => IResult
+type ICh = (expected: string) => [IChFunc]
+
+const ch: ICh = c => [
   input => {
     if (input && input.length >= c.length) {
       if (input.substr(0, c.length) === c) {
@@ -13,7 +23,10 @@ const ch = c => [
   }
 ];
 
-const end = () => [
+type IEndFunc = (input: string) => IResult
+type IEnd = () => [IEndFunc]
+
+const end: IEnd = () => [
   input => {
     if (input === "") {
       return [[input]];
@@ -22,7 +35,10 @@ const end = () => [
   }
 ];
 
-const regex = Expression => {
+type IRegexFunc = (input: string) => IResult
+type IRegex = (expectedRegExp: string) => [IRegexFunc]
+
+const regex: IRegex = Expression => {
   const _Expression = new RegExp(Expression);
   return [
     input => {
@@ -35,7 +51,7 @@ const regex = Expression => {
   ];
 };
 
-const mergeSeqResult = (result, resultItem, parseResult) => {
+const mergeResult = (result: IResult, resultItem: Array<string>, parseResult: IResult) => {
   const cacheResultItem = resultItem.slice(0, -1);
   if (parseResult.length) {
     for (const parseResultItem of parseResult) {
@@ -46,14 +62,17 @@ const mergeSeqResult = (result, resultItem, parseResult) => {
   }
 };
 
-const seq = (...parserList) => [
+type ISeqFunc = (input: string) => IResult
+type ISeq = (...expectedSequenceList: IParser[]) => [ISeqFunc]
+
+const seq: ISeq = (...parserList) => [
   input => {
     let result = [[input]];
     for (const parser of parserList) {
       let nextResult = [];
       for (const resultItem of result) {
         const parseResult = parser[0](last(resultItem));
-        mergeSeqResult(nextResult, resultItem, parseResult);
+        mergeResult(nextResult, resultItem, parseResult);
       }
       result = nextResult;
     }
@@ -61,7 +80,10 @@ const seq = (...parserList) => [
   }
 ];
 
-const alt = (...parserList) => [
+type IAltFunc = (input: string) => IResult
+type IAlt = (...expectedBranchList: IParser[]) => [IAltFunc]
+
+const alt: IAlt = (...parserList) => [
   input => {
     let result = [];
     for (const parser of parserList) {
@@ -78,18 +100,10 @@ const alt = (...parserList) => [
   }
 ];
 
-const mergeAnyResult = (result, resultItem, parseResult) => {
-  const cacheResultItem = resultItem.slice(0, -1);
-  if (parseResult.length) {
-    for (const parseResultItem of parseResult) {
-      if (parseResultItem.length) {
-        result.push(cacheResultItem.concat(parseResultItem));
-      }
-    }
-  }
-};
+type IAnyFunc = (input: string) => IResult
+type IAny = (expected: IParser, maxRepeatTimes: number) => [IAnyFunc]
 
-const any = (parser, max) => [
+const any: IAny = (parser, max) => [
   input => {
     let result = [[input]];
     let current = 0;
@@ -102,7 +116,7 @@ const any = (parser, max) => [
       let nextPrevResult = [];
       for (const prevResultItem of prevResult) {
         const parseResult = parser[0](last(prevResultItem));
-        mergeAnyResult(nextPrevResult, prevResultItem, parseResult);
+        mergeResult(nextPrevResult, prevResultItem, parseResult);
       }
       prevResult = nextPrevResult;
       result = result.concat(prevResult);
@@ -112,13 +126,17 @@ const any = (parser, max) => [
   }
 ];
 
-const opt = parser => any(parser, 1);
-const rep = parser => any(parser, 998);
+type IOptOrRep = (expected: IParser) => [IAnyFunc]
+const opt: IOptOrRep = parser => any(parser, 1);
+const rep: IOptOrRep = parser => any(parser, 998);
 
-const using = (parser, handler) => [input => handler(parser[0](input))];
+
+type IUsing = (parser: IParser, handler: (result: IResult) => IResult) => [(input: string) => IResult]
+
+const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
 
 let createParser = () => [fail];
-let setParser = (object, parser) => {
+let setParser = (object: IParser, parser: IParser) => {
   object[0] = parser[0];
 };
 
