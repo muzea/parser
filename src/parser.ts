@@ -1,5 +1,6 @@
 type IResult = Array<Array<string>>;
-type IParserFunc = () => IResult;
+type IParserFunc = (input?: string) => IResult;
+type IHParserFunc = [IParserFunc]
 
 type IParser = ICh | IEnd | IRegex | ISeq | IAlt | IAny | IOptOrRep
 
@@ -7,10 +8,10 @@ type ILast = (array: Array<string>) => string
 
 const last: ILast = arr => arr[arr.length - 1];
 
-const fail: [IParserFunc] = [() => []];
+type IFail = [IParserFunc]
+const fail: IFail = [() => []];
 
-type IChFunc = (input: string) => IResult
-type ICh = (expected: string) => [IChFunc]
+type ICh = (expected: string) => [IParserFunc]
 
 const ch: ICh = c => [
   input => {
@@ -23,8 +24,7 @@ const ch: ICh = c => [
   }
 ];
 
-type IEndFunc = (input: string) => IResult
-type IEnd = () => [IEndFunc]
+type IEnd = () => [IParserFunc]
 
 const end: IEnd = () => [
   input => {
@@ -35,8 +35,7 @@ const end: IEnd = () => [
   }
 ];
 
-type IRegexFunc = (input: string) => IResult
-type IRegex = (expectedRegExp: string) => [IRegexFunc]
+type IRegex = (expectedRegExp: string) => [IParserFunc]
 
 const regex: IRegex = Expression => {
   const _Expression = new RegExp(Expression);
@@ -62,8 +61,7 @@ const mergeResult = (result: IResult, resultItem: Array<string>, parseResult: IR
   }
 };
 
-type ISeqFunc = (input: string) => IResult
-type ISeq = (...expectedSequenceList: IParser[]) => [ISeqFunc]
+type ISeq = (...expectedSequenceList: IHParserFunc[]) => [IParserFunc]
 
 const seq: ISeq = (...parserList) => [
   input => {
@@ -80,8 +78,7 @@ const seq: ISeq = (...parserList) => [
   }
 ];
 
-type IAltFunc = (input: string) => IResult
-type IAlt = (...expectedBranchList: IParser[]) => [IAltFunc]
+type IAlt = (...expectedBranchList: IHParserFunc[]) => [IParserFunc]
 
 const alt: IAlt = (...parserList) => [
   input => {
@@ -100,8 +97,7 @@ const alt: IAlt = (...parserList) => [
   }
 ];
 
-type IAnyFunc = (input: string) => IResult
-type IAny = (expected: IParser, maxRepeatTimes: number) => [IAnyFunc]
+type IAny = (expected: IHParserFunc, maxRepeatTimes: number) => [IParserFunc]
 
 const any: IAny = (parser, max) => [
   input => {
@@ -126,17 +122,17 @@ const any: IAny = (parser, max) => [
   }
 ];
 
-type IOptOrRep = (expected: IParser) => [IAnyFunc]
+type IOptOrRep = (expected: IHParserFunc) => [IParserFunc]
 const opt: IOptOrRep = parser => any(parser, 1);
 const rep: IOptOrRep = parser => any(parser, 998);
 
 
-type IUsing = (parser: IParser, handler: (result: IResult) => IResult) => [(input: string) => IResult]
+type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [IParserFunc]
 
 const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
 
-let createParser = () => [fail];
-let setParser = (object: IParser, parser: IParser) => {
+let createParser = () => fail;
+let setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
   object[0] = parser[0];
 };
 
