@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "strictNullChecks": false,
+    "target": "es6",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": [
+        "es7",
+        "esnext"
+    ],
+    "moduleResolution": "node"
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+      "node_modules",
+      "sample-dist",
+      "dist"
+  ]
+}

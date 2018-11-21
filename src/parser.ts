@@ -1,10 +1,8 @@
-type IResult = Array<Array<string>>;
+type IResult = string[][];
 type IParserFunc = (input?: string) => IResult;
 type IHParserFunc = [IParserFunc]
 
-type IParser = ICh | IEnd | IRegex | ISeq | IAlt | IAny | IOptOrRep
-
-type ILast = (array: Array<string>) => string
+type ILast = (array: string[]) => string
 
 const last: ILast = arr => arr[arr.length - 1];
 
@@ -37,11 +35,11 @@ const end: IEnd = () => [
 
 type IRegex = (expectedRegExp: string) => [IParserFunc]
 
-const regex: IRegex = Expression => {
-  const _Expression = new RegExp(Expression);
+const regex: IRegex = expectedRegExp => {
+  const expression = new RegExp(expectedRegExp);
   return [
     input => {
-      const match = _Expression.exec(input);
+      const match = expression.exec(input);
       if (match && match.index === 0) {
         return [[match[0], input.substr(match[0].length)]];
       }
@@ -50,7 +48,7 @@ const regex: IRegex = Expression => {
   ];
 };
 
-const mergeResult = (result: IResult, resultItem: Array<string>, parseResult: IResult) => {
+const mergeResult = (result: IResult, resultItem: string[], parseResult: IResult) => {
   const cacheResultItem = resultItem.slice(0, -1);
   if (parseResult.length) {
     for (const parseResultItem of parseResult) {
@@ -67,7 +65,7 @@ const seq: ISeq = (...parserList) => [
   input => {
     let result = [[input]];
     for (const parser of parserList) {
-      let nextResult = [];
+      const nextResult = [];
       for (const resultItem of result) {
         const parseResult = parser[0](last(resultItem));
         mergeResult(nextResult, resultItem, parseResult);
@@ -82,7 +80,7 @@ type IAlt = (...expectedBranchList: IHParserFunc[]) => [IParserFunc]
 
 const alt: IAlt = (...parserList) => [
   input => {
-    let result = [];
+    const result = [];
     for (const parser of parserList) {
       const parseResult = parser[0](input);
       if (parseResult.length) {
@@ -109,7 +107,7 @@ const any: IAny = (parser, max) => [
         break;
       }
 
-      let nextPrevResult = [];
+      const nextPrevResult = [];
       for (const prevResultItem of prevResult) {
         const parseResult = parser[0](last(prevResultItem));
         mergeResult(nextPrevResult, prevResultItem, parseResult);
@@ -131,8 +129,8 @@ type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [
 
 const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
 
-let createParser = () => fail;
-let setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
+const createParser = () => fail;
+const setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
   object[0] = parser[0];
 };
 
