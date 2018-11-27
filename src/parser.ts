@@ -1,142 +1,137 @@
-type IResult = string[][];
-type IParserFunc = (input?: string) => IResult;
-type IHParserFunc = [IParserFunc]
-
 type ILast = (array: string[]) => string
 
 const last: ILast = arr => arr[arr.length - 1];
 
-type IFail = [IParserFunc]
-const fail: IFail = [() => []];
+type Item = ItemString | ItemReg | ItemSequence | ItemBranch
 
-type ICh = (expected: string) => [IParserFunc]
 
-const ch: ICh = c => [
-  input => {
-    if (input && input.length >= c.length) {
-      if (input.substr(0, c.length) === c) {
-        return [[c, input.substr(c.length)]];
-      }
-    }
-    return fail[0]();
-  }
-];
+enum ItemType {
+  string = 'string',
+  regexp = 'regexp',
+  sequence = 'sequence',
+  branch = 'branch',
+  repeat = 'repeat',
+  end = 'end',
+}
 
-type IEnd = () => [IParserFunc]
+interface ItemEnd {
+  type: ItemType.end
+}
 
-const end: IEnd = () => [
-  input => {
-    if (input === "") {
-      return [[input]];
-    }
-    return fail[0]();
-  }
-];
+interface ItemString {
+  type: ItemType.string
+  expected: string
+}
 
-type IRegex = (expectedRegExp: string) => [IParserFunc]
+interface ItemReg {
+  type: ItemType.regexp
+  expected: RegExp
+}
 
-const regex: IRegex = expectedRegExp => {
-  const expression = new RegExp(expectedRegExp);
-  return [
-    input => {
-      const match = expression.exec(input);
-      if (match && match.index === 0) {
-        return [[match[0], input.substr(match[0].length)]];
-      }
-      return fail[0]();
-    }
-  ];
+interface ItemSequence {
+  type: ItemType.sequence
+  expected: Item[]
+}
+
+interface ItemBranch {
+  type: ItemType.branch
+  expected: Item[]
+}
+
+interface ItemRepeat {
+  type: ItemType.repeat
+  maxRepeatTime: number
+  expected: Item
+}
+
+type ICh = (expected: string) => ItemString
+
+const ch: ICh = c => ({ type: ItemType.string, expected: c });
+
+type IEnd = () => ItemEnd
+
+const end: IEnd = () => ({ type: ItemType.end });
+
+type IRegex = (expectedRegExp: string) => ItemReg
+
+const regex: IRegex = expectedRegExp => ({ type: ItemType.regexp, expected: new RegExp(expectedRegExp) });
+
+// const mergeResult = (result: IResult, resultItem: string[], parseResult: IResult) => {
+//   const cacheResultItem = resultItem.slice(0, -1);
+//   if (parseResult.length) {
+//     for (const parseResultItem of parseResult) {
+//       if (parseResultItem.length) {
+//         result.push(cacheResultItem.concat(parseResultItem));
+//       }
+//     }
+//   }
+// };
+
+type ISeq = (...expectedSequenceList: Item[]) => ItemSequence
+
+const seq: ISeq = (...itemList) => {
+  return {
+    type: ItemType.sequence,
+    expected: itemList,
+  };
 };
 
-const mergeResult = (result: IResult, resultItem: string[], parseResult: IResult) => {
-  const cacheResultItem = resultItem.slice(0, -1);
-  if (parseResult.length) {
-    for (const parseResultItem of parseResult) {
-      if (parseResultItem.length) {
-        result.push(cacheResultItem.concat(parseResultItem));
-      }
-    }
-  }
+type IAlt = (...expectedBranchList: Item[]) => ItemBranch
+
+const alt: IAlt = (...itemList) => {
+  return {
+    type: ItemType.branch,
+    expected: itemList,
+  };
 };
 
-type ISeq = (...expectedSequenceList: IHParserFunc[]) => [IParserFunc]
+type IAny = (expected: Item, maxRepeatTimes: number) => ItemRepeat
 
-const seq: ISeq = (...parserList) => [
-  input => {
-    let result = [[input]];
-    for (const parser of parserList) {
-      const nextResult = [];
-      for (const resultItem of result) {
-        const parseResult = parser[0](last(resultItem));
-        mergeResult(nextResult, resultItem, parseResult);
-      }
-      result = nextResult;
-    }
-    return result;
+const any: IAny = (item, max) => {
+  return {
+    type: ItemType.repeat,
+    expected: item,
+    maxRepeatTime: max,
+  };
+};
+
+type IOptOrRep = (expected: Item) => ItemRepeat
+const opt: IOptOrRep = item => any(item, 1);
+const rep: IOptOrRep = item => any(item, 998);
+
+
+// type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [IParserFunc]
+
+// const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
+
+interface IParser {
+  // expected: Item;
+  setExpected(expected: Item): void;
+  parser(input: string): string[];
+  0: (input: string) => string[][];
+}
+
+class Parser implements IParser {
+  private expected = null;
+  parser(input: string) {
+    return [];
   }
-];
-
-type IAlt = (...expectedBranchList: IHParserFunc[]) => [IParserFunc]
-
-const alt: IAlt = (...parserList) => [
-  input => {
-    const result = [];
-    for (const parser of parserList) {
-      const parseResult = parser[0](input);
-      if (parseResult.length) {
-        for (const parseResultItem of parseResult) {
-          if (parseResultItem.length) {
-            result.push(parseResultItem);
-          }
-        }
-      }
-    }
-    return result;
+  0 = this.parser
+  setExpected(expected: Item) {
+    this.expected = expected;
   }
-];
+}
 
-type IAny = (expected: IHParserFunc, maxRepeatTimes: number) => [IParserFunc]
+const createParser = () => {
+  return new Parser()
+};
 
-const any: IAny = (parser, max) => [
-  input => {
-    let result = [[input]];
-    let current = 0;
-    let prevResult = [[input]];
-    do {
-      if (current === max) {
-        break;
-      }
-
-      const nextPrevResult = [];
-      for (const prevResultItem of prevResult) {
-        const parseResult = parser[0](last(prevResultItem));
-        mergeResult(nextPrevResult, prevResultItem, parseResult);
-      }
-      prevResult = nextPrevResult;
-      result = result.concat(prevResult);
-      current = current + 1;
-    } while (prevResult.length);
-    return result;
-  }
-];
-
-type IOptOrRep = (expected: IHParserFunc) => [IParserFunc]
-const opt: IOptOrRep = parser => any(parser, 1);
-const rep: IOptOrRep = parser => any(parser, 998);
-
-
-type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [IParserFunc]
-
-const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
-
-const createParser = () => fail;
-const setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
-  object[0] = parser[0];
+const setParser = (parser: Parser, expected: Item) => {
+  parser.setExpected(expected);
 };
 
 export {
   last,
-  fail,
   ch,
   end,
   regex,
@@ -145,7 +140,7 @@ export {
   any,
   opt,
   rep,
-  using,
+  // using,
   createParser,
   setParser
 };
