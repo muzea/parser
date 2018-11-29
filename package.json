@@ -8,6 +8,7 @@
   "scripts": {
     "build": "parcel build src/* --target node",
     "build:sample": "parcel build sample/* -d sample-dist --target node",
+    "build:debug": "parcel build src/* --target node --no-minify && parcel build sample/* -d sample-dist --target node --no-minify",
     "lint": "yarn tslint -p . && yarn eslint sample/*.js"
   },
   "devDependencies": {

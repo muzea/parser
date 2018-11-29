@@ -16,10 +16,8 @@ let Exp = createParser();
 let Parser = createParser();
 
 function passBracket(result) {
-  return result.map(resultItem => {
-    const [, exp, , ...rest] = resultItem;
-    return [exp].concat(rest);
-  });
+  const [, exp, , ...rest] = result;
+  return [exp].concat(rest);
 }
 
 const calculatorMap = {
@@ -38,13 +36,11 @@ const calculatorMap = {
 };
 
 let calculator = result => {
-  return result.map(resultItem => {
-    if (resultItem.length < 3) {
-      return resultItem;
-    }
-    const [left, operator, right, ...rest] = resultItem;
-    return [`${calculatorMap[operator](left, right)}`].concat(rest);
-  });
+  if (result.length < 3) {
+    return result;
+  }
+  const [left, operator, right, ...rest] = result;
+  return [`${calculatorMap[operator](left, right)}`].concat(rest);
 };
 
 setParser(
@@ -64,6 +60,4 @@ setParser(
 
 setParser(Parser, seq(Exp, end()));
 
-for (const result of Parser[0]("123+321*(456+654)")) {
-  console.log("RESULT :", result);
-}
+console.log("RESULT :", Parser[0]("123+321*(456+654)"));

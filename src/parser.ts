@@ -1,4 +1,4 @@
-type IResult = string[][];
+type IResult = string[];
 type IParserFunc = (input?: string) => IResult;
 type IHParserFunc = [IParserFunc]
 
@@ -15,7 +15,7 @@ const ch: ICh = c => [
   input => {
     if (input && input.length >= c.length) {
       if (input.substr(0, c.length) === c) {
-        return [[c, input.substr(c.length)]];
+        return [c, input.substr(c.length)];
       }
     }
     return fail[0]();
@@ -27,7 +27,7 @@ type IEnd = () => [IParserFunc]
 const end: IEnd = () => [
   input => {
     if (input === "") {
-      return [[input]];
+      return [input];
     }
     return fail[0]();
   }
@@ -41,36 +41,29 @@ const regex: IRegex = expectedRegExp => {
     input => {
       const match = expression.exec(input);
       if (match && match.index === 0) {
-        return [[match[0], input.substr(match[0].length)]];
+        return [match[0], input.substr(match[0].length)];
       }
       return fail[0]();
     }
   ];
 };
 
-const mergeResult = (result: IResult, resultItem: string[], parseResult: IResult) => {
-  const cacheResultItem = resultItem.slice(0, -1);
-  if (parseResult.length) {
-    for (const parseResultItem of parseResult) {
-      if (parseResultItem.length) {
-        result.push(cacheResultItem.concat(parseResultItem));
-      }
-    }
-  }
+const mergeResult = (result: IResult, parseResult: IResult) => {
+  result.splice(-1, 1);
+  result.push(...parseResult)
 };
 
 type ISeq = (...expectedSequenceList: IHParserFunc[]) => [IParserFunc]
 
 const seq: ISeq = (...parserList) => [
   input => {
-    let result = [[input]];
+    const result = [input];
     for (const parser of parserList) {
-      const nextResult = [];
-      for (const resultItem of result) {
-        const parseResult = parser[0](last(resultItem));
-        mergeResult(nextResult, resultItem, parseResult);
+      const parseResult = parser[0](last(result));
+      if (parseResult.length === 0) {
+        return fail[0]();
       }
-      result = nextResult;
+      mergeResult(result, parseResult)
     }
     return result;
   }
@@ -80,18 +73,13 @@ type IAlt = (...expectedBranchList: IHParserFunc[]) => [IParserFunc]
 
 const alt: IAlt = (...parserList) => [
   input => {
-    const result = [];
     for (const parser of parserList) {
       const parseResult = parser[0](input);
       if (parseResult.length) {
-        for (const parseResultItem of parseResult) {
-          if (parseResultItem.length) {
-            result.push(parseResultItem);
-          }
-        }
+        return parseResult
       }
     }
-    return result;
+    return fail[0]();
   }
 ];
 
@@ -99,23 +87,20 @@ type IAny = (expected: IHParserFunc, maxRepeatTimes: number) => [IParserFunc]
 
 const any: IAny = (parser, max) => [
   input => {
-    let result = [[input]];
+    const result = [input];
     let current = 0;
-    let prevResult = [[input]];
     do {
       if (current === max) {
         break;
       }
-
-      const nextPrevResult = [];
-      for (const prevResultItem of prevResult) {
-        const parseResult = parser[0](last(prevResultItem));
-        mergeResult(nextPrevResult, prevResultItem, parseResult);
+      const parseResult = parser[0](last(result));
+      if (parseResult.length) {
+        mergeResult(result, parseResult)
+      } else {
+        break;
       }
-      prevResult = nextPrevResult;
-      result = result.concat(prevResult);
       current = current + 1;
-    } while (prevResult.length);
+    } while (true);
     return result;
   }
 ];
@@ -129,7 +114,7 @@ type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [
 
 const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
 
-const createParser = () => fail;
+const createParser = () => fail.slice();
 const setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
   object[0] = parser[0];
 };

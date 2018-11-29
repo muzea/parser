@@ -16,9 +16,7 @@ let Exp = createParser();
 let Parser = createParser();
 
 function group(result) {
-  return result.map(resultItem => {
-    return [resultItem.slice(0, -1)].concat(resultItem.slice(-1));
-  });
+  return [result.slice(0, -1)].concat(result.slice(-1));
 }
 
 setParser(Term, alt(regex("\\d+(\\.\\d+)?"), seq(ch("("), Exp, ch(")"))));
@@ -35,6 +33,4 @@ setParser(
 
 setParser(Parser, seq(Exp, end()));
 
-for (const result of Parser[0]("123+321*(456+654)")) {
-  console.log("RESULT :", result);
-}
+console.log("RESULT :", Parser[0]("123+321*(456+654)"));

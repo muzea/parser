@@ -22,6 +22,4 @@ setParser(Exp, seq(Factor, rep(seq(alt(ch("+"), ch("-")), Factor))));
 
 setParser(Parser, seq(Exp, end()));
 
-for (const result of Parser[0]("123+321*(456+654)")) {
-  console.log("RESULT :", result);
-}
+console.log("RESULT :", Parser[0]("77777777"));
