@@ -5,6 +5,7 @@
   ],
   "rules": {
     "ordered-imports": false,
+    "no-console": false,
     "no-submodule-imports": false,
     "no-implicit-dependencies": false,
     "variable-name": false

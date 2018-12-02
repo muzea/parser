@@ -129,7 +129,7 @@ type IUsing = (parser: IHParserFunc, handler: (result: IResult) => IResult) => [
 
 const using: IUsing = (parser, handler) => [input => handler(parser[0](input))];
 
-const createParser = () => fail;
+const createParser = () => ([] as any as [IParserFunc]);
 const setParser = (object: [IParserFunc], parser: [IParserFunc]) => {
   object[0] = parser[0];
 };
