@@ -178,7 +178,7 @@ setParser(
         characters
       )
     ),
-    group('string')
+    group('characters')
   )
 )
 
@@ -241,7 +241,7 @@ setParser(
       frac,
       exp
     ),
-    group('hex')
+    group('number')
   )
 )
 
