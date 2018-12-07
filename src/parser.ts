@@ -9,10 +9,20 @@ const last: ILast = arr => arr[arr.length - 1];
 type IFail = [IParserFunc]
 const fail: IFail = [() => []];
 
+const isDebug = false
+
 type ICh = (expected: string) => [IParserFunc]
 
 const ch: ICh = c => [
   input => {
+    if (isDebug) {
+      console.log('ch')
+      console.log('expected ', c)
+      console.log('input', input)
+    }
+    if (c === '') {
+      return [['', input]]
+    }
     if (input && input.length >= c.length) {
       if (input.substr(0, c.length) === c) {
         return [[c, input.substr(c.length)]];
@@ -36,9 +46,14 @@ const end: IEnd = () => [
 type IRegex = (expectedRegExp: string) => [IParserFunc]
 
 const regex: IRegex = expectedRegExp => {
-  const expression = new RegExp(expectedRegExp);
+  const expression = new RegExp(expectedRegExp, "u");
   return [
     input => {
+      if (isDebug) {
+        console.log('regex')
+        console.log('expected ', expectedRegExp)
+        console.log('input', input)
+      }
       const match = expression.exec(input);
       if (match && match.index === 0) {
         return [[match[0], input.substr(match[0].length)]];
@@ -63,6 +78,10 @@ type ISeq = (...expectedSequenceList: IHParserFunc[]) => [IParserFunc]
 
 const seq: ISeq = (...parserList) => [
   input => {
+    if (isDebug) {
+      console.log('seq')
+      console.log('input', input)
+    }
     let result = [[input]];
     for (const parser of parserList) {
       const nextResult = [];
@@ -80,6 +99,10 @@ type IAlt = (...expectedBranchList: IHParserFunc[]) => [IParserFunc]
 
 const alt: IAlt = (...parserList) => [
   input => {
+    if (isDebug) {
+      console.log('alt')
+      console.log('input', input)
+    }
     const result = [];
     for (const parser of parserList) {
       const parseResult = parser[0](input);
@@ -99,6 +122,10 @@ type IAny = (expected: IHParserFunc, maxRepeatTimes: number) => [IParserFunc]
 
 const any: IAny = (parser, max) => [
   input => {
+    if (isDebug) {
+      console.log('any')
+      console.log('input', input)
+    }
     let result = [[input]];
     let current = 0;
     let prevResult = [[input]];
