@@ -5,7 +5,8 @@ import {
   regex,
   seq,
   alt,
-  end
+  end,
+  using
 } from '../src/parser'
 
 
@@ -32,260 +33,335 @@ const exp = createParser();
 const sign = createParser();
 const ws = createParser();
 
+function group(type) {
+  return (result) => {
+    return result.map(resultItem => {
+      return [{
+        type,
+        value: resultItem.slice(0, -1)
+      }].concat(resultItem.slice(-1));
+    });
+  }
+}
+
+
 setParser(
   value,
-  alt(
-    object,
-    array,
-    string,
-    number,
-    ch("true"),
-    ch("false"),
-    ch("null")
+  using(
+    alt(
+      object,
+      array,
+      string,
+      number,
+      ch("true"),
+      ch("false"),
+      ch("null")
+    ),
+    group('value')
   )
 )
 
 setParser(
   object,
-  alt(
-    seq(
-      ch("{"),
-      ws,
-      ch("}")
+  using(
+    alt(
+      seq(
+        ch("{"),
+        ws,
+        ch("}")
+      ),
+      seq(
+        ch("{"),
+        members,
+        ch("}")
+      )
     ),
-    seq(
-      ch("{"),
-      members,
-      ch("}")
-    )
+    group('object')
   )
 )
 
 setParser(
   members,
-  alt(
-    member,
-    seq(
+  using(
+    alt(
       member,
-      ch(","),
-      members
-    )
+      seq(
+        member,
+        ch(","),
+        members
+      )
+    ),
+    group('members')
   )
 )
 
 setParser(
   member,
-  seq(
-    ws,
-    string,
-    ws,
-    ch(":"),
-    element
+  using(
+    seq(
+      ws,
+      string,
+      ws,
+      ch(":"),
+      element
+    ),
+    group('member')
   )
 )
 
 setParser(
   array,
-  alt(
-    seq(
-      ch("["),
-      ws,
-      ch("]")
+  using(
+    alt(
+      seq(
+        ch("["),
+        ws,
+        ch("]")
+      ),
+      seq(
+        ch("["),
+        elements,
+        ch("]")
+      )
     ),
-    seq(
-      ch("["),
-      elements,
-      ch("]")
-    )
+    group('array')
   )
 )
 
 setParser(
   elements,
-  alt(
-    element,
-    seq(
+  using(
+    alt(
       element,
-      ch(","),
-      elements
-    )
+      seq(
+        element,
+        ch(","),
+        elements
+      )
+    ),
+    group('elements')
   )
 )
 
 setParser(
   element,
-  seq(
-    ws,
-    value,
-    ws
+  using(
+    seq(
+      ws,
+      value,
+      ws
+    ),
+    group('element')
   )
 )
 
 setParser(
   string,
-  seq(
-    ch('"'),
-    characters,
-    ch('"')
+  using(
+    seq(
+      ch('"'),
+      characters,
+      ch('"')
+    ),
+    group('string')
   )
 )
 
 
 setParser(
   characters,
-  alt(
-    ch(""),
-    seq(
-      character,
-      characters
-    )
+  using(
+    alt(
+      ch(""),
+      seq(
+        character,
+        characters
+      )
+    ),
+    group('string')
   )
 )
 
 
 setParser(
   character,
-  alt(
-    regex("^[\\u{0020}\\u{0021}\\u{0023}-\\u{005b}\\u{005d}-\\u{10FFFF}]+"),
-    seq(
-      ch("\\"),
-      escape
-    )
+  using(
+    alt(
+      regex("^[\\u{0020}\\u{0021}\\u{0023}-\\u{005b}\\u{005d}-\\u{10FFFF}]+"),
+      seq(
+        ch("\\"),
+        escape
+      )
+    ),
+    group('character')
   )
 )
 
 setParser(
   escape,
-  alt(
-    ch('"'),
-    ch('\\'),
-    ch('/'),
-    ch('b'),
-    ch('n'),
-    ch('r'),
-    ch('t'),
-    seq(
-      ch("u"),
-      hex,
-      hex,
-      hex,
-      hex
-    )
+  using(
+    alt(
+      ch('"'),
+      ch('\\'),
+      ch('/'),
+      ch('b'),
+      ch('n'),
+      ch('r'),
+      ch('t'),
+      seq(
+        ch("u"),
+        hex,
+        hex,
+        hex,
+        hex
+      )
+    ),
+    group('escape')
   )
 )
 
 
 setParser(
   hex,
-  alt(
-    digit,
-    regex("[A-F]"),
-    regex("[a-f]")
+  using(
+    alt(
+      digit,
+      regex("[A-F]"),
+      regex("[a-f]")
+    ),
+    group('hex')
   )
 )
 
 setParser(
   number,
-  seq(
-    int,
-    frac,
-    exp
+  using(
+    seq(
+      int,
+      frac,
+      exp
+    ),
+    group('hex')
   )
 )
 
 
 setParser(
   int,
-  alt(
-    digit,
-    seq(
-      onenine,
-      digits
+  using(
+    alt(
+      digit,
+      seq(
+        onenine,
+        digits
+      ),
+      seq(
+        ch("-"),
+        digits
+      ),
+      seq(
+        ch("-"),
+        onenine,
+        digits
+      )
     ),
-    seq(
-      ch("-"),
-      digits
-    ),
-    seq(
-      ch("-"),
-      onenine,
-      digits
-    )
+    group('int')
   )
 )
 
 
 setParser(
   digits,
-  alt(
-    digit,
-    seq(
+  using(
+    alt(
       digit,
-      digits
-    )
+      seq(
+        digit,
+        digits
+      )
+    ),
+    group('digits')
   )
 )
 
 
 setParser(
   digit,
-  alt(
-    ch("0"),
-    onenine
+  using(
+    alt(
+      ch("0"),
+      onenine
+    ),
+    group('digit')
   )
 )
 
 setParser(
   onenine,
-  regex("[1-9]")
+  using(
+    regex("[1-9]"),
+    group('onenine')
+  )
 )
 
 
 setParser(
   frac,
-  alt(
-    ch(""),
-    seq(
-      ch("."),
-      digits
-    )
+  using(
+    alt(
+      ch(""),
+      seq(
+        ch("."),
+        digits
+      )
+    ),
+    group('frac')
   )
 )
 
 
 setParser(
   exp,
-  alt(
-    ch(""),
-    seq(
-      ch("E"),
-      sign,
-      digits
+  using(
+    alt(
+      ch(""),
+      seq(
+        ch("E"),
+        sign,
+        digits
+      ),
+      seq(
+        ch("e"),
+        sign,
+        digits
+      )
     ),
-    seq(
-      ch("e"),
-      sign,
-      digits
-    )
+    group('exp')
   )
 )
 
 setParser(
   sign,
-  alt(
-    ch(""),
-    ch("+"),
-    ch("-")
+  using(
+    alt(
+      ch(""),
+      ch("+"),
+      ch("-")
+    ),
+    group('sign')
   )
 )
 
 setParser(
   ws,
-  alt(
-    ch(""),
-    ch("\u0009"),
-    ch("\u000a"),
-    ch("\u0020")
+  using(
+    alt(
+      ch(""),
+      ch("\u0009"),
+      ch("\u000a"),
+      ch("\u0020")
+    ),
+    group('ws')
   )
 )
 
@@ -299,5 +375,5 @@ const data = JSON.stringify({
 })
 
 for (const result of json[0](data)) {
-  console.log("RESULT :", result);
+  console.log("RESULT :", JSON.stringify(result, null, 2));
 }
