@@ -368,12 +368,185 @@ setParser(
 
 setParser(json, seq(element, end()))
 
-const data = JSON.stringify({
-  a: '213',
-  b: [1, 2, 3],
-  c: "\n777"
-})
 
-for (const result of json[0](data)) {
-  console.log("RESULT :", JSON.stringify(result, null, 2));
+interface Item {
+  type: string;
+  value: Array<Item|string>
 }
+
+function pass(obj: Item, index: number): Item|string {
+  return obj.value[index]
+}
+
+function objectToValue(obj: Item): object {
+  const value = pass(obj, 1) as Item
+  if (value.type === 'ws') {
+    return {}
+  }
+  const ret: any = {}
+  let members = value
+  let member = pass(members, 0) as Item
+  while (true) {
+    const key = stringToValue(pass(member, 1) as Item)
+    const value = elementToValue(pass(member, 4) as Item)
+    ret[key] = value
+    if (members.value.length === 1) {
+      break
+    }
+    members = pass(members, 2) as Item
+    member = pass(members, 0) as Item
+  }
+  return ret
+}
+
+function arrayToValue(obj: Item): any[] {
+  const value = pass(obj, 1) as Item
+  if (value.type === 'ws') {
+    return []
+  }
+  const ret: any = []
+  let elements = value
+  let element = pass(elements, 0) as Item
+  while (true) {
+    ret.push(elementToValue(element))
+    if (elements.value.length === 1) {
+      break
+    }
+    elements = pass(elements, 2) as Item
+    element = pass(elements, 0) as Item
+  }
+  return ret
+}
+
+function digitToValue(obj: Item): number {
+  if (typeof obj.value[0] === 'string') {
+    return parseInt(obj.value[0] as string, 10)
+  }
+  return parseInt((obj.value[0] as Item).value[0] as string, 10)
+}
+
+function digitsToValue(obj: Item): number {
+  let digitsItem = obj
+  let ret = 0
+  let digitItem = pass(digitsItem, 0) as Item
+  while (true) {
+    ret = 10 * ret + digitToValue(digitItem)
+    if (digitsItem.value.length === 1) {
+      break
+    }
+    digitsItem = pass(digitsItem, 1) as Item
+    digitItem = pass(digitsItem, 0) as Item
+  }
+  return ret
+}
+
+function hexToValue(obj: Item): string {
+  if (typeof obj.value[0] === 'string') {
+    return obj.value[0] as string
+  }
+  return digitToValue(obj.value[0] as Item).toString()
+}
+
+function escapeToValue(obj: Item): string {
+  if (obj.value.length === 1) {
+    return obj.value[0] as string
+  }
+  return `u${hexToValue(obj.value[1] as Item)}${hexToValue(obj.value[2] as Item)}${hexToValue(obj.value[3] as Item)}${hexToValue(obj.value[4] as Item)}`
+}
+
+function stringToValue(obj: Item): string {
+  let charactersItem = pass(obj, 1) as Item
+  let ret = ''
+  let characterItem = pass(charactersItem, 0)
+  while (true) {
+    if (characterItem as string === '') {
+      break
+    }
+    if ((characterItem as Item).value.length === 1) {
+      ret += (characterItem as Item).value[0]
+    } else {
+      ret += '\\' + escapeToValue((characterItem as Item).value[1] as Item)
+    }
+    if (charactersItem.value.length === 1) {
+      break
+    }
+    charactersItem = pass(charactersItem, 1) as Item
+    characterItem = pass(charactersItem, 0) as Item
+  }
+  return ret
+}
+
+function intToValue(obj: Item): number {
+  switch (obj.value.length) {
+    case 1: return digitToValue(obj.value[0] as Item)
+    case 2: {
+      if (obj.value[0] === '-') {
+        return -1 * digitsToValue(obj.value[1] as Item)
+      }
+      return 10 * parseInt((obj.value[0] as Item).value[0] as string, 10) + digitsToValue(obj.value[1] as Item)
+    }
+    case 3: return -1 * (10 * parseInt((obj.value[1] as Item).value[0] as string, 10) + digitsToValue(obj.value[2] as Item))
+  }
+}
+
+function fracToValue(obj: Item): number {
+  if (obj.value.length === 1) {
+    return 0
+  }
+  const num = digitsToValue(pass(obj, 1) as Item)
+  return parseFloat(`0.${num}`)
+  // :)
+}
+
+function expToValue(obj: Item): number {
+  if (obj.value.length === 1) {
+    return 0
+  }
+  const num = digitsToValue(pass(obj, 2) as Item)
+  if ((obj.value[1] as Item).value[0] === '-') {
+    return -num
+  }
+  return num
+}
+
+function numberToValue(obj: Item): number {
+  const [intItem, fracItem, expItem] = obj.value
+  const intValue = intToValue(intItem as Item)
+  const fracValue = fracToValue(fracItem as Item)
+  const expValue = expToValue(expItem as Item)
+  return (intValue + fracValue) * Math.pow(10, expValue)
+}
+
+function elementToValue(obj: Item): any {
+  const value = pass(obj, 1)
+  const rawValue = pass(value as Item, 0)
+  switch (rawValue) {
+    case 'true': return true
+    case 'false': return false
+    case 'null': return null
+  }
+  switch ((rawValue as Item).type) {
+    case 'object': return objectToValue(rawValue as Item)
+    case 'array': return arrayToValue(rawValue as Item)
+    case 'string': return stringToValue(rawValue as Item)
+    case 'number': return numberToValue(rawValue as Item)
+  }
+}
+
+export {
+  json,
+  elementToValue,
+  Item
+}
+
+// const data = JSON.stringify({
+//   a: '213',
+//   b: [1, 2, 3],
+//   c: "\n777"
+// })
+
+// for (const result of json[0](data)) {
+//   // console.log("RESULT :", JSON.stringify(result, null, 2));
+//   const r = elementToValue(result[0] as any as Item)
+//   console.log(JSON.stringify(r, null, 2))
+// }

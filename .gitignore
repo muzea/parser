@@ -2,5 +2,6 @@
 .cache
 dist
 sample-dist
+benchmark-dist
 yarn.lock
 node_modules
