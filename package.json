@@ -9,14 +9,27 @@
     "build": "parcel build src/* --target node",
     "build:sample": "parcel build sample/* -d sample-dist --target node",
     "build:debug": "parcel build src/* --target node --no-minify && parcel build sample/* -d sample-dist --target node --no-minify && parcel build benchmark/* -d benchmark-dist --target node --no-minify",
-    "lint": "yarn tslint -p . && yarn eslint sample/*.js"
+    "test": "nyc ava --color",
+    "lint": "yarn tslint -p . && yarn eslint sample/*.js && yarn tslint sample/*.ts",
+    "benchmark": "node ./benchmark-dist/json.js",
+    "benchmark:build": "parcel build benchmark/* -d benchmark-dist --target node"
+  },
+  "nyc": {
+    "include": [
+      "src/parser.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "cache": true
   },
   "devDependencies": {
-    "ava": "^1.0.0-rc.2",
+    "ava": "1.2",
     "benchmark": "^2.1.4",
     "eslint": "^5.9.0",
     "eslint-plugin-prettier": "^3.0.0",
     "microtime": "^2.1.8",
+    "nyc": "^13.2.0",
     "parcel-bundler": "^1.10.3",
     "prettier": "^1.15.2",
     "ts-node": "^7.0.1",

@@ -1,4 +1,4 @@
-import { isHttpurl } from '../sample/rfc1738'
+import { isHttpurl } from '../sample/rfc1738';
 import test from 'ava';
 
 test('is-url', t => {

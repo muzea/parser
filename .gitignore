@@ -1,5 +1,6 @@
 .git
 .cache
+.nyc_output
 dist
 sample-dist
 benchmark-dist

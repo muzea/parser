@@ -447,11 +447,22 @@ function hexToValue(obj: Item): string {
   return digitToValue(obj.value[0] as Item).toString()
 }
 
+const codeMap = {
+  '"': '\"',
+  '\\': '\\',
+  '/': '\/',
+  'b': '\b',
+  'n': '\n',
+  'r': '\r',
+  't': '\t',
+}
+
 function escapeToValue(obj: Item): string {
   if (obj.value.length === 1) {
-    return obj.value[0] as string
+    return codeMap[obj.value[0] as string]
   }
-  return `u${hexToValue(obj.value[1] as Item)}${hexToValue(obj.value[2] as Item)}${hexToValue(obj.value[3] as Item)}${hexToValue(obj.value[4] as Item)}`
+  const code = parseInt(`${hexToValue(obj.value[1] as Item)}${hexToValue(obj.value[2] as Item)}${hexToValue(obj.value[3] as Item)}${hexToValue(obj.value[4] as Item)}`, 16);
+  return String.fromCharCode(code)
 }
 
 function stringToValue(obj: Item): string {
@@ -465,7 +476,7 @@ function stringToValue(obj: Item): string {
     if ((characterItem as Item).value.length === 1) {
       ret += (characterItem as Item).value[0]
     } else {
-      ret += '\\' + escapeToValue((characterItem as Item).value[1] as Item)
+      ret += escapeToValue((characterItem as Item).value[1] as Item)
     }
     if (charactersItem.value.length === 1) {
       break
