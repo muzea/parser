@@ -379,41 +379,41 @@ function pass(obj: Item, index: number): Item|string {
 }
 
 function objectToValue(obj: Item): object {
-  const value = pass(obj, 1) as Item
-  if (value.type === 'ws') {
+  const valueItem = pass(obj, 1) as Item
+  if (valueItem.type === 'ws') {
     return {}
   }
   const ret: any = {}
-  let members = value
-  let member = pass(members, 0) as Item
+  let membersItem = valueItem
+  let memberItem = pass(membersItem, 0) as Item
   while (true) {
-    const key = stringToValue(pass(member, 1) as Item)
-    const value = elementToValue(pass(member, 4) as Item)
-    ret[key] = value
-    if (members.value.length === 1) {
+    const key = stringToValue(pass(memberItem, 1) as Item)
+    const objValue = elementToValue(pass(memberItem, 4) as Item)
+    ret[key] = objValue
+    if (membersItem.value.length === 1) {
       break
     }
-    members = pass(members, 2) as Item
-    member = pass(members, 0) as Item
+    membersItem = pass(membersItem, 2) as Item
+    memberItem = pass(membersItem, 0) as Item
   }
   return ret
 }
 
 function arrayToValue(obj: Item): any[] {
-  const value = pass(obj, 1) as Item
-  if (value.type === 'ws') {
+  const valueItem = pass(obj, 1) as Item
+  if (valueItem.type === 'ws') {
     return []
   }
   const ret: any = []
-  let elements = value
-  let element = pass(elements, 0) as Item
+  let elementsItem = valueItem
+  let elementItem = pass(elementsItem, 0) as Item
   while (true) {
-    ret.push(elementToValue(element))
-    if (elements.value.length === 1) {
+    ret.push(elementToValue(elementItem))
+    if (elementsItem.value.length === 1) {
       break
     }
-    elements = pass(elements, 2) as Item
-    element = pass(elements, 0) as Item
+    elementsItem = pass(elementsItem, 2) as Item
+    elementItem = pass(elementsItem, 0) as Item
   }
   return ret
 }
@@ -518,8 +518,8 @@ function numberToValue(obj: Item): number {
 }
 
 function elementToValue(obj: Item): any {
-  const value = pass(obj, 1)
-  const rawValue = pass(value as Item, 0)
+  const valueItem = pass(obj, 1)
+  const rawValue = pass(valueItem as Item, 0)
   switch (rawValue) {
     case 'true': return true
     case 'false': return false
