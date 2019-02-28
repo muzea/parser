@@ -449,8 +449,8 @@ function hexToValue(obj: Item): string {
 
 const codeMap = {
   '"': '\"',
-  '\\': '\\',
   '/': '\/',
+  '\\': '\\',
   'b': '\b',
   'n': '\n',
   'r': '\r',

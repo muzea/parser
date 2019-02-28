@@ -12,7 +12,8 @@
     "test": "nyc ava --color",
     "lint": "yarn tslint -p . && yarn eslint sample/*.js && yarn tslint sample/*.ts",
     "benchmark": "node ./benchmark-dist/json.js",
-    "benchmark:build": "parcel build benchmark/* -d benchmark-dist --target node"
+    "benchmark:build": "parcel build benchmark/* -d benchmark-dist --target node",
+    "report-coverage": "nyc ava --color && nyc report --reporter=text-lcov > coverage.lcov && codecov"
   },
   "nyc": {
     "include": [
@@ -26,6 +27,7 @@
   "devDependencies": {
     "ava": "1.2",
     "benchmark": "^2.1.4",
+    "codecov": "^3.2.0",
     "eslint": "^5.9.0",
     "eslint-plugin-prettier": "^3.0.0",
     "microtime": "^2.1.8",
